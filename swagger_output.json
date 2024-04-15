@@ -1,0 +1,5123 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "SeaBaas Branch Transactions",
+    "description": "API Documentation for Branch Transactions (Payments)",
+    "version": "1.0.0"
+  },
+  "host": "payment-mgt-api.dev.bepeerless.co",
+  "basePath": "/v1",
+  "tags": [
+    {
+      "name": "Cheque",
+      "description": "Routes for cheque endpoint"
+    },
+    {
+      "name": "Till Account",
+      "description": "Routes for Till Account endpoint"
+    },
+    {
+      "name": "Transfer",
+      "description": "Endpoints for transfer request"
+    },
+
+    {
+      "name": "Transaction",
+      "description": "Endpoints to perform transaction request"
+    },
+    {
+      "name": "Automated Transfer Narration",
+      "description": "Generate Automated Transfer Narrations"
+    },
+    {
+      "name": "Branch Journal Posting",
+      "description": "Routes for Branch Journal Posting"
+    },
+    {
+      "name": "Bulk Journal Posting",
+      "description": "Routes for Bulk Journal Posting"
+    }
+  ],
+  "schemes": ["https"],
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "Authorization",
+      "description": "Enter your bearer token in the format *Bearer &lt;token>*"
+    }
+  },
+  "components": {
+    "schemas": {
+      "Cheque": {
+        "type": "object",
+        "properties": {
+          "requestId": { "type": "integer" },
+          "referenceId": { "type": "string" },
+          "chequeNumber": { "type": "string" },
+          "chequeLeafStatus": { "type": "string" },
+          "initiatingCustomerAccNumber": { "type": "string" },
+          "initiatingCustomerAccName": { "type": "string" },
+          "beneficiaryCustomerAccNumber": { "type": "string" },
+          "beneficiaryCustomerAccName": { "type": "string" },
+          "amount": { "type": "number" },
+          "payeeName": { "type": "string" },
+          "applicableTillAccount": { "type": "string" },
+          "chargeAmount": { "type": "number" },
+          "taxAmount": { "type": "number" },
+          "totalTransactionAmount": { "type": "number" },
+          "currency": { "type": "string" },
+          "currencyId": { "type": "number" },
+          "chequeTransactionType": { "type": "string" },
+          "chequeTransactionStatus": { "type": "string" },
+          "requestStatus": { "type": "string" },
+          "approveStatus": { "type": "string" },
+          "narration": { "type": "string" },
+          "reasonForFailure": { "type": "string" },
+          "metadata": { "type": "object" }
+        }
+      },
+      "TillAccount": {
+        "type": "object",
+        "properties": {
+          "tillAccountId": { "type": "number" },
+          "userId": { "type": "number" },
+          "branchTillConfigId": { "type": "number" },
+          "tillCode": { "type": "string" },
+          "currencyShortCode": { "type": "string" },
+          "currencyId": { "type": "number" },
+          "branchCode": { "type": "string" },
+          "isAssigned": { "type": "boolean" },
+          "approveStatus": { "type": "string" },
+          "requestStatus": { "type": "string" },
+          "tillRequestType": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "reasonForRejection": { "type": "string" },
+          "requestId": { "type": "number" }
+        }
+      }
+    }
+  },
+
+  "paths": {
+    "/cheques/withdrawal": {
+      "post": {
+        "tags": ["Cheque"],
+        "description": "This endpoint is to initiate cheque withdrawal",
+        "summary": "initiate cheque withdrawal",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "debitAccountNumber": {
+                  "example": "1234567890"
+                },
+                "chequeNo": {
+                  "example": "123456"
+                },
+                "amount": {
+                  "example": "20000"
+                },
+                "narration": {
+                  "example": "transfer"
+                },
+                "payeeName": {
+                  "example": "Tobi"
+                },
+                "tillCode": {
+                  "example": "1234"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Cheque Transaction Request submitted successfully, awaiting approval",
+            "schema": {
+              "$ref": "#/components/schemas/Cheque"
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/cheques/deposit": {
+      "post": {
+        "tags": ["Cheque"],
+        "description": "This endpoint is to initiate cheque deposit",
+        "summary": "initiate cheque deposit",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "debitAccountNumber": {
+                  "example": "6402703057"
+                },
+                "chequeNo": {
+                  "example": "65"
+                },
+                "creditAccountNumber": {
+                  "example": "3353937123"
+                },
+                "amount": {
+                  "example": "50"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Cheque Transaction Request submitted successfully, awaiting approval",
+            "schema": {
+              "$ref": "#/components/schemas/Cheque"
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/cheques/requests": {
+      "get": {
+        "tags": ["Cheque"],
+        "description": "This endpoint is to get all cheque request",
+        "summary": "Get all cheque request",
+        "parameters": [
+          {
+            "name": "branch",
+            "in": "query",
+            "description": "Branch that needs to be considered for filter",
+            "required": false,
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "available"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cheque Requests returned successfully",
+            "schema": {
+              "$ref": "#/components/schemas/Cheque"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/cheques/breach/check": {
+      "get": {
+        "tags": ["Cheque"],
+        "description": "This endpoint is to check for breach",
+        "summary": "Check for breach check",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "debitAccountNumber",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "creditAccountNumber",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "otcProductId",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "transactionType",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "'Breach check successful",
+            "schema": {
+              "$ref": "#/components/schemas/Cheque"
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/cheques/{requestId}/authorize": {
+      "patch": {
+        "tags": ["Cheque"],
+        "description": "Authorize a cheque request",
+        "summary": "Authorize cheque request",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "description": "ID of the cheque request to authorize",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "description": "Bearer token for authorization",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Cheque request authorized successfully",
+            "schema": {
+              "$ref": "#/components/schemas/Cheque"
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/cheques/{requestId}/reject": {
+      "patch": {
+        "tags": ["Cheque"],
+        "description": "Reject a cheque request",
+        "summary": "Reject cheque request",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "description": "ID of the cheque request to reject",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Reason for rejecting the cheque request",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reasonForRejection": {
+                  "type": "string",
+                  "example": "Insufficient funds"
+                }
+              }
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "description": "Bearer token for authorization",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Cheque request rejected successfully",
+            "schema": {
+              "$ref": "#/components/schemas/Cheque"
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/branch": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "Get till account by branch",
+        "summary": "Get till account by branch",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string",
+            "description": "Bearer token for authorization"
+          },
+          {
+            "name": "tillCode",
+            "in": "query",
+            "type": "string",
+            "description": "Till code to filter"
+          },
+          {
+            "name": "userIds",
+            "in": "query",
+            "type": "string",
+            "description": "User IDs to filter"
+          },
+          {
+            "name": "currencyCodes",
+            "in": "query",
+            "type": "string",
+            "description": "Currency codes to filter"
+          },
+          {
+            "name": "authorizationStatus",
+            "in": "query",
+            "type": "string",
+            "description": "Authorization status to filter"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string",
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "type": "string",
+            "description": "Page size for pagination"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "type": "string",
+            "description": "Status to filter"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Till Account retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/logs/{tillCode}": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to get Activity Logs",
+        "summary": "Get activity log",
+        "parameters": [
+          {
+            "name": "tillCode",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Till Account Activity Logs retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/counts": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to get Till counts",
+        "summary": "Get Till counts",
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Till counts returned successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/topup": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "Request for till topup",
+        "summary": "Post Till topup",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "creditAccountNumber": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Request submitted successfully, awaiting approval",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/teller": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to get Till Accounts by telle",
+        "summary": "Get till account by teller",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Till Accounts retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/teller/{userId}": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to get Till Accounts by user Id",
+        "summary": "Get till account by userId",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Till Accounts retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-account/till-to-vault": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to transfer from till to vault",
+        "summary": "Till to Vault Transfer",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "debitAccountNumber": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Request submitted successfully, awaiting approval",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/applicable/{userId}/{branchCode}/{currencyShortCode}": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to get till account applicable for a transaction",
+        "summary": "Get Applicable Account for cash and cheque transaction",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "branchCode",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "currencyShortCode",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Applicable Till Account for Transaction retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/validate/{tillCode}/{transactionAmount}": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to check Till account balance",
+        "summary": "Get Till Account Balance",
+        "parameters": [
+          {
+            "name": "tillCode",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "transactionAmount",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Till Account Balance Sufficient for Transaction",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/till-to-vault/bulk": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is perform bulk transfer from Till account to vault",
+        "summary": "Send Bulk Transfer fom Till account to Vault",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tillAccounts": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "'Request approved successfully' or 'Request submitted successfully, awaiting approval",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/till-to-till": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is perform transfer from a Till account to another Till account",
+        "summary": "Transfer from Till to Till account",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "debitAccountNumber": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                },
+                "creditAccountNumber": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Request submitted successfully, awaiting approval",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/{requestId}/rejected": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is reject Transaction request",
+        "summary": "Transaction request RejectED",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reasonForRejection": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Transaction Request Rejected",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/{requestId}/till-to-till/authorize": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is Approve Transaction request",
+        "summary": "Transaction request Approval",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Transaction Request Approved",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/{requestId}/till-to-vault/authorize": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is authorize Transaction request from till to vault",
+        "summary": "Transaction request authorize from till to vault",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Transaction Request Approved",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/{requestId}/till-to-vault/bulk/authorize": {
+      "post": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to authorize Bulk Transaction request  from till to vault",
+        "summary": "Bulk Transaction request authorize from till to vault",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Transaction Request Approved",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/till-accounts/vaults": {
+      "get": {
+        "tags": ["Till Account"],
+        "description": "This endpoint is to get All Vault",
+        "summary": "Get all Vault",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "Vaults retrieved successfully",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/TillAccount"
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong: Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/transfer-requests/breach/check": {
+      "get": {
+        "summary": "Check account operating conditions breach",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "customerAccountNumber",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "transactionType",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "otcProductId",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Breach check successful"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+
+    "/transfer-requests/requests": {
+      "get": {
+        "tags": ["Transfer"],
+        "summary": "Gets a transaction request",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/records": {
+      "get": {
+        "summary": "Get transfer records",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Records fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/initiators": {
+      "get": {
+        "summary": "Get transfer request initiators",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Initiators fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/approvers": {
+      "get": {
+        "summary": "Get transfer request approvers",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approvers fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}/approvers": {
+      "patch": {
+        "summary": "Get transfer request approvers",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "branchCode": {
+                  "example": "I066"
+                },
+                "otcProductId": {
+                  "example": "ba92c12d-c66a-478c-b424-e59450be2f12"
+                },
+                "debitAccountName": {
+                  "example": "Kingsley Uchenna"
+                },
+                "isTransferScheduled": {
+                  "example": "false"
+                },
+                "pattern": {
+                  "example": "any"
+                },
+                "scheduleStartDate": {
+                  "example": "any"
+                },
+                "scheduleEndDate": {
+                  "example": "any"
+                },
+                "debitAccountNumber": {
+                  "example": "6402703057"
+                },
+                "beneficiaryAccountNumber": {
+                  "example": "6532513542"
+                },
+                "beneficiaryAccountName": {
+                  "example": "Maikori Chancellor Gray"
+                },
+                "transferType": {
+                  "example": "WithinBank"
+                },
+                "amount": {
+                  "example": "33"
+                },
+                "currency": {
+                  "example": "NGN"
+                },
+                "narration": {
+                  "example": "Inbranch Transfer BOO debitAccountName IFO Beneficiary Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request has already passed through the approval process"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer request not found"
+          },
+          "422": {
+            "description": "Please complete the transaction creation process"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}/standing-orders": {
+      "patch": {
+        "summary": "Toggle standing order active or inactive",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "isActive",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standing Order Updated Successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/": {
+      "get": {
+        "summary": "Get all tansfer request",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/draft": {
+      "post": {
+        "summary": "Create draft transfer request",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "initiator": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiatorId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "tenantId": {
+                  "type": "string",
+                  "example": "tenant"
+                },
+                "team": {
+                  "example": "any"
+                },
+                "teamId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "draft within bank transfer request successfully created"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}/draft": {
+      "patch": {
+        "summary": "Update draft transfer request",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "initiator": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiatorId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "tenantId": {
+                  "type": "string",
+                  "example": "tenant"
+                },
+                "team": {
+                  "example": "any"
+                },
+                "teamId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "draft within bank transfer request successfully updated"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer request not found"
+          },
+          "422": {
+            "description": "Transfer request is not in draft"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/standing-orders": {
+      "get": {
+        "summary": "Get all standing order",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standing Orders fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/standing-orders/{accountNumber}": {
+      "get": {
+        "summary": "Get all standing order by account number",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "accountNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Standing Orders fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}": {
+      "get": {
+        "summary": "Get transfer request by Id",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update transfer request",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "branchCode": {
+                  "example": "I066"
+                },
+                "otcProductId": {
+                  "example": "ba92c12d-c66a-478c-b424-e59450be2f12"
+                },
+                "debitAccountName": {
+                  "example": "Kingsley Uchenna"
+                },
+                "isTransferScheduled": {
+                  "example": "false"
+                },
+                "pattern": {
+                  "example": "any"
+                },
+                "scheduleStartDate": {
+                  "example": "any"
+                },
+                "scheduleEndDate": {
+                  "example": "any"
+                },
+                "debitAccountNumber": {
+                  "example": "6402703057"
+                },
+                "beneficiaryAccountNumber": {
+                  "example": "6532513542"
+                },
+                "beneficiaryAccountName": {
+                  "example": "Maikori Chancellor Gray"
+                },
+                "transferType": {
+                  "example": "WithinBank"
+                },
+                "amount": {
+                  "example": "33"
+                },
+                "currency": {
+                  "example": "NGN"
+                },
+                "narration": {
+                  "example": "Inbranch Transfer BOO debitAccountName IFO Beneficiary Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success operation"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}/transactions": {
+      "get": {
+        "summary": "Get transfer request include transaction",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer request including transactions fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/transaction/{transferId}": {
+      "get": {
+        "summary": "Get transfer transaction by Id",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transferId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Transaction fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/receipt/{transferId}": {
+      "get": {
+        "summary": "Generate transfer transaction receipt",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transferId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Receipt fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unable to generate"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/customer/{debitAccountNumber}": {
+      "get": {
+        "summary": "Get transfer request by customer acc",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "debitAccountNumber",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer request not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/estimate-charge": {
+      "post": {
+        "summary": "Calculate charge",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "environment",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "chargeId": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Charge estimated successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/deduct-charge": {
+      "post": {
+        "summary": "Deduct estimated charge from customer account",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ledgerId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "chargeId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "currencyId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "amount": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "chargeType": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "checkBalance": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "customerAccountNumber": {
+                  "type": "string",
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Charge deduction from customer account successful"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/product/charges": {
+      "post": {
+        "summary": "Get charge",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "environment",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "product_category",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/transfer_request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Charge fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/product/withdrawal-details": {
+      "post": {
+        "summary": "Get withdrawal balance and count",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customerAccountNumber": {
+                  "example": "any"
+                },
+                "ledgerId": {
+                  "example": "any"
+                },
+                "applicablePaymentType": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Withdrawal limits details fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/product/deposit-details": {
+      "post": {
+        "summary": "Get deposit balance and count",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ledgerId": {
+                  "example": "any"
+                },
+                "customerAccountNumber": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deposit limits details fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/activity/logs/{transferId}": {
+      "get": {
+        "summary": "Get activities by transfer Id",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transferId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/activity/{requestId}/logs": {
+      "get": {
+        "summary": "Get activities by request Id",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer request not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}/withdraw": {
+      "patch": {
+        "summary": "Withdraw request",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "firstname": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "lastname": {
+                  "type": "string",
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Request Withdrawn Successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests/{requestId}/delete": {
+      "delete": {
+        "summary": "Delete request",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer Request Deleted Successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transfer-requests": {
+      "post": {
+        "summary": "Create within bank transfer request_v2",
+        "tags": ["Transfer"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "branchCode": {
+                  "example": "I066"
+                },
+                "otcProductId": {
+                  "example": "ba92c12d-c66a-478c-b424-e59450be2f12"
+                },
+                "debitAccountName": {
+                  "example": "Kingsley Uchenna"
+                },
+                "isTransferScheduled": {
+                  "example": "false"
+                },
+                "pattern": {
+                  "example": "any"
+                },
+                "scheduleStartDate": {
+                  "example": "any"
+                },
+                "scheduleEndDate": {
+                  "example": "any"
+                },
+                "debitAccountNumber": {
+                  "example": "6402703057"
+                },
+                "beneficiaryAccountNumber": {
+                  "example": "6532513542"
+                },
+                "beneficiaryAccountName": {
+                  "example": "Maikori Chancellor Gray"
+                },
+                "transferType": {
+                  "example": "WithinBank"
+                },
+                "amount": {
+                  "example": "33"
+                },
+                "currency": {
+                  "example": "NGN"
+                },
+                "narration": {
+                  "example": "Inbranch Transfer BOO debitAccountName IFO Beneficiary Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success operation"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/requests": {
+      "get": {
+        "tags": ["Transaction"],
+        "summary": "Gets a transaction request",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "authorization status",
+            "in": "query",
+            "type": "string",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "type": "string",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid value for status parameter. Acceptable values are: approved, in-review, in-issue or draft."
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+
+    "/transaction/records": {
+      "get": {
+        "summary": "Gets a transaction record",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "type": "string",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/initiators": {
+      "get": {
+        "tags": ["Transaction"],
+        "summary": "Gets transaction request initiators",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Initiators fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/approvers": {
+      "get": {
+        "summary": "Gets transaction request approvals",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approvers fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/": {
+      "get": {
+        "summary": "Gets all transaction requests",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "debitAccountNumber": {
+                  "example": "1234567890"
+                },
+                "chequeNo": {
+                  "example": "123456"
+                },
+                "amount": {
+                  "example": "20000"
+                },
+                "narration": {
+                  "example": "transfer"
+                },
+                "payeeName": {
+                  "example": "Tobi"
+                },
+                "tillCode": {
+                  "example": "1234"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/{requestId}/approval": {
+      "patch": {
+        "summary": "Approves transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "approvalStatus",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "transactionType",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "reasonForRejection": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiatorId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiator": {
+                  "type": "string",
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction request approved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Transaction request not found"
+          },
+
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+
+    "/transaction/deposit/request": {
+      "post": {
+        "summary": "Creates deposit transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string",
+            "description": "Bearer token for authorization"
+          },
+          {
+            "name": "environment",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customerAccountNumber": {
+                  "type": "string",
+                  "example": "11001"
+                },
+                "tillAccountCode": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "amount": {
+                  "type": "string",
+                  "example": "2888383"
+                },
+                "depositorType": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "depositorName": {
+                  "type": "string",
+                  "example": "John Doe"
+                },
+                "phoneNumber": {
+                  "type": "string",
+                  "example": "+2349292922929"
+                },
+                "narration": {
+                  "type": "string",
+                  "example": "Hello world"
+                },
+                "branchCode": {
+                  "type": "string",
+                  "example": "I066"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer credentials not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/deposit/draft": {
+      "post": {
+        "summary": "create draft deposit transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "initiator": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiatorId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "tenantId": {
+                  "type": "string",
+                  "example": "tenant"
+                },
+                "team": {
+                  "example": "any"
+                },
+                "teamId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Draft Cash Deposit Transaction request successfully created"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/withdrawal": {
+      "post": {
+        "summary": "Create withdrawal transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "tillCode",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "environment",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transactionData",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/transaction_request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/withdrawal/draft": {
+      "post": {
+        "summary": "create draft withdrawal transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "initiator": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiatorId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "tenantId": {
+                  "type": "string",
+                  "example": "tenant"
+                },
+                "team": {
+                  "example": "any"
+                },
+                "teamId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Draft Cash Withdrawal Transaction request successfully created"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/{requestId}/draft": {
+      "patch": {
+        "summary": "Update draft transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "initiator": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "initiatorId": {
+                  "type": "string",
+                  "example": "any"
+                },
+                "tenantId": {
+                  "type": "string",
+                  "example": "tenant"
+                },
+                "team": {
+                  "example": "any"
+                },
+                "teamId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transaction request not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/log/{transactionId}": {
+      "get": {
+        "summary": "Get activities by transaction Id",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activities fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transaction/request/log/{requestId}": {
+      "get": {
+        "summary": "Get activities by request Id",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activities fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": "Internal Server error"
+        }
+      }
+    },
+    "/transaction/request/{requestId}": {
+      "get": {
+        "summary": "Get transaction request by Id",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/{transactionId}": {
+      "get": {
+        "summary": "Get transaction by Id",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request": {
+      "get": {
+        "summary": "Get all transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request fetched successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/receipt/{transactionId}": {
+      "get": {
+        "summary": "Generate transction receipt",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Receipt fetched successfully"
+          },
+          "400": {
+            "description": "Unable to generate receit"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/{requestId}/withdraw": {
+      "patch": {
+        "summary": "Withdraw a request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "user",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                },
+                "firstname": {
+                  "example": "any"
+                },
+                "lastname": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request Withdrawn Successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/{requestId}/delete": {
+      "delete": {
+        "summary": "Delete a request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request Deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/{referenceId}/reference": {
+      "get": {
+        "summary": "Get transaction request by reference Id",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "referenceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request fetched successfully"
+          },
+          "404": {
+            "description": "Transaction request not found"
+          },
+          "422": {
+            "description": "ReferenceId cannot be empty"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/request/{requestId}/modify": {
+      "patch": {
+        "summary": "Update transaction request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "transactionData",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/transaction_request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction Request updated successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transaction request not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/till-account": {
+      "post": {
+        "summary": "Get till account",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "query": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Till data gotten  successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/breach/check": {
+      "get": {
+        "summary": "Check account operating conditions breach",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "query": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Breach check successful"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transaction/withdrawal/request": {
+      "post": {
+        "summary": "Handle withdrawal request",
+        "tags": ["Transaction"],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "otcProductId": {
+                  "type": "string",
+                  "example": "edc85355-fcc3-4b1c-abbf-4e9ac15fb674"
+                },
+                "customerAccountNumber": {
+                  "type": "string",
+                  "example": "1324567806"
+                },
+                "tillAccountCode": {
+                  "type": "string",
+                  "example": "ASTNGNI066drizz9"
+                },
+                "branchCode": {
+                  "type": "string",
+                  "example": "branchCode is required"
+                },
+                "narration": {
+                  "type": "string",
+                  "example": "Cash Withdrawal IFO John Doe"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ApiResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+
+    "/automated-transaction-narration/generate": {
+      "post": {
+        "tags": ["Automated Transfer Narration"],
+        "summary": "Generate transfer narration",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "transactionType": {
+                  "example": "Cash Deposit"
+                },
+                "transactionDetails": {
+                  "example": {
+                    "depositorName": "Admin Retailcore"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Narration Fetched Successfully."
+          },
+          "400": {
+            "description": "Transaction type not found."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+
+    "/branch-journal-posting/split-entry": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Save Split Entry To Draft",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "postingAmount": {
+                  "example": 62000
+                },
+                "creditAllocationType": {
+                  "example": "amount"
+                },
+                "debitAllocationType": {
+                  "example": "percent"
+                },
+                "currencyCode": {
+                  "example": "NGN"
+                },
+                "valueDate": {
+                  "example": "2024-04-10"
+                },
+                "supportingDocumentUrl": {
+                  "example": "https//someurl.com"
+                },
+                "creditEntries": [
+                  {
+                    "creditAmount": {
+                      "example": 38000
+                    },
+                    "creditNarration": {
+                      "example": "A deposit posting"
+                    },
+                    "creditAccountNumber": {
+                      "example": "CA213408714"
+                    }
+                  },
+                  {
+                    "creditAmount": {
+                      "example": 13000
+                    },
+                    "creditNarration": {
+                      "example": "A deposit posting"
+                    },
+                    "creditAccountNumber": {
+                      "example": "0181308714"
+                    }
+                  },
+                  {
+                    "creditAmount": {
+                      "example": 11000
+                    },
+                    "creditNarration": {
+                      "example": "A deposit posting"
+                    },
+                    "creditAccountNumber": {
+                      "example": "CA81308714"
+                    }
+                  }
+                ],
+                "debitEntries": [
+                  {
+                    "debitAmount": {
+                      "example": 32
+                    },
+                    "debitNarration": {
+                      "example": "A deposit posting"
+                    },
+                    "debitAccountNumber": {
+                      "example": "01213408714"
+                    }
+                  },
+                  {
+                    "debitAmount": {
+                      "example": 13
+                    },
+                    "debitNarration": {
+                      "example": "A deposit posting"
+                    },
+                    "debitAccountNumber": {
+                      "example": "7981308714"
+                    }
+                  },
+                  {
+                    "debitAmount": {
+                      "example": 55
+                    },
+                    "debitNarration": {
+                      "example": "A deposit posting"
+                    },
+                    "debitAccountNumber": {
+                      "example": "0081308714"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Draft request saved successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/get-available-bank-currencies": {
+      "get": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Get Available Currencies For Selection:",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string",
+            "schema": {
+              "$ref": "#definitions/Branch Journal Posting"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available Bank Currencies Fetched Successfully."
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/applicable-account/{currencyCode}/{transactionAmount}": {
+      "get": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Fetch Applicable Accounts",
+        "parameters": [
+          {
+            "name": "currencyCode",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "transactionAmount",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "isDebit",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Applicable Account for Posting Fetched Successfully."
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/validate-value-date/{valueDate}": {
+      "get": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Get Validate Value Date",
+        "parameters": [
+          {
+            "name": "valueDate",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Value Date Validated Successfully."
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/single-entry/validate/{transactionAmount}/{valueDate}": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Validate Single Entry Posting",
+        "parameters": [
+          {
+            "name": "transactionAmount",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "valueDate",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "debitAccount": {
+                  "example": {
+                    "accountNumber": "1535285119",
+                    "currencyCode": "NGN"
+                  }
+                },
+                "creditAccount": {
+                  "example": {
+                    "accountNumber": "ASSTNGN102",
+                    "currencyCode": "NGN"
+                  }
+                },
+                "isSameCurrency": {
+                  "example": "true for same currency posting and false for cross currency"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Single Entry Posting Validated Successfully."
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/single-entry": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Save Branch Journal Posting",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "referenceId": {
+                  "example": "2024032918311350752000839"
+                },
+                "supportingDocumentUrl": {
+                  "example": "any"
+                },
+                "valueDate": {
+                  "example": "2024-03-30"
+                },
+                "branchJournalPostingRequest": {
+                  "example": {
+                    "debitAccountNo": "ASSTUSD102",
+                    "debitAccountName": "Groovy Branch Internal Account 3",
+                    "creditAccountNo": "ASSTUSD103",
+                    "creditAccountName": "Groovy Branch Internal Account 5",
+                    "postingAmount": 2000,
+                    "debitCurrencyCode": "USD",
+                    "debitCurrencyId": "6f9ed9b6-255b-41b6-aa0f-5b18945ccd2a",
+                    "isSameCurrency": true,
+                    "creditCurrencyCode": "USD",
+                    "creditCurrencyId": "6f9ed9b6-255b-41b6-aa0f-5b18945ccd2a",
+                    "postingNarration": "testing"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch Journal Posting Request Submitted Successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/single-entry/draft": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Single Entry Save As Draft",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "referenceId": {
+                  "example": "2024032918311350752000839"
+                },
+                "supportingDocumentUrl": {
+                  "example": "any"
+                },
+                "valueDate": {
+                  "example": "2024-03-30"
+                },
+                "branchJournalPostingRequest": {
+                  "example": {
+                    "debitAccountNo": "ASSTUSD102",
+                    "debitAccountName": "Groovy Branch Internal Account 3",
+                    "creditAccountNo": "ASSTUSD103",
+                    "creditAccountName": "Groovy Branch Internal Account 5",
+                    "postingAmount": 2000,
+                    "debitCurrencyCode": "USD",
+                    "debitCurrencyId": "6f9ed9b6-255b-41b6-aa0f-5b18945ccd2a",
+                    "isSameCurrency": true,
+                    "creditCurrencyCode": "USD",
+                    "creditCurrencyId": "6f9ed9b6-255b-41b6-aa0f-5b18945ccd2a",
+                    "postingNarration": "testing"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch Journal Posting Saved as Draft Successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/authorize/{referenceId}": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Authorize",
+        "parameters": [
+          {
+            "name": "referenceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "approvalStatus": {
+                  "example": "Approved"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch Journal Posting Approved Successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/single-entry/reverse/{referenceId}": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Single Entry Reversal",
+        "parameters": [
+          {
+            "name": "referenceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Branch Journal Posting Reversal Approved Successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/generate-reference-id": {
+      "get": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Generate Reference Id",
+        "description": "This generates Reference ID that will be displayed in the process summary page",
+        "responses": {
+          "200": {
+            "description": "Reference Id Generated Successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/": {
+      "get": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Get branch journal posting request",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      },
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Branch Journal posting",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "isTransferScheduled": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/branch-journal-posting/split-entry/authorize/{requestId}": {
+      "post": {
+        "tags": ["Branch Journal Posting"],
+        "summary": "Split Entry Authorization",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Split entry request approved successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+
+    "/bulk-journal-posting/create/{batchId}": {
+      "post": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Create bulk journal posting",
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal posting successful"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/bulk-journal-posting/validate": {
+      "post": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Validate Bulk Journal Posting By Uploading Csv",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "file",
+              "properties": {
+                "file": {
+                  "example": "any.csv"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal posting validation processing"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Modify request",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "batchId": {
+                  "example": "any"
+                },
+                "postingPayload": {
+                  "example": "array"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal posting validation processing modified"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/bulk-journal-posting/validate/{batchId}": {
+      "get": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Get processing validation",
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal posting validation retrieved"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/bulk-journal-posting/draft/{batchId}": {
+      "post": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Save as draft",
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal draft saved"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/bulk-journal-posting/draft": {
+      "get": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Get draft by userId",
+        "responses": {
+          "200": {
+            "description": "Bulk journal draft retrieved"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/bulk-journal-posting/reject": {
+      "post": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Reject posting request ",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "batchId": {
+                  "example": "any"
+                },
+                "reasonForRejection": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal posting rejected successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/bulk-journal-posting/approve/{requestId}": {
+      "post": {
+        "tags": ["Bulk Journal Posting"],
+        "summary": "Approve posting request ",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk journal posting approved successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "autoHeaders": true,
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ]
+  },
+  "definitions": {
+    "transaction": {
+      "required": ["transactionId", "transactionStatus"],
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string",
+          "format": "uuid",
+          "example": "any"
+        },
+        "referenceId": {
+          "type": "string",
+          "example": "any"
+        },
+        "customerAccNumber": {
+          "type": "string",
+          "example": "any"
+        },
+        "customerAccName": {
+          "type": "string"
+        },
+        "depositorName": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "chargeAmount": {
+          "type": "number"
+        },
+        "taxAmount": {
+          "type": "number"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "currencyId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "transactionType": {
+          "type": true
+        },
+        "transactionStatus": {
+          "type": false
+        },
+        "reasonForFailure": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "transaction_request": {
+      "required": ["requestId", "transactionStatus", "approveStatus", "initiatorId"],
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "referenceId": {
+          "type": "string"
+        },
+        "customerAccNumber": {
+          "type": "string"
+        },
+        "customerAccName": {
+          "type": "string"
+        },
+        "depositorName": {
+          "type": "string"
+        },
+        "debitAccountNumber": {
+          "type": "string"
+        },
+        "creditAccountNumber": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "chargeAmount": {
+          "type": "number"
+        },
+        "taxAmount": {
+          "type": "number"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "currencyId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reasonForRejection": {
+          "type": "string"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "requestStatus": {
+          "type": "string",
+          "example": "in-review"
+        },
+        "transactionStatus": {
+          "type": "string",
+          "example": "pending"
+        },
+        "approveStatus": {
+          "type": "string",
+          "example": "pending"
+        },
+        "transactionLedgers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "applicableChargeLedgers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "chargeApplicableTaxLedgerEntries": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "applicableTaxLedgers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "bulkRequestData": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "initiatorId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "otcProductId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "transfer_request": {
+      "required": [
+        "requestId",
+        "isTransferScheduled",
+        "transferType",
+        "requestStatus",
+        "referenceId",
+        "createdStandingOrder",
+        "isActiveStandingOrder"
+      ],
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "debitAccountNumber": {
+          "type": "string"
+        },
+        "debitAccountName": {
+          "type": "string"
+        },
+        "beneficiaryBank": {
+          "type": "string"
+        },
+        "beneficiaryAccountNumber": {
+          "type": "string"
+        },
+        "beneficiaryAccountName": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "chargeAmount": {
+          "type": "number"
+        },
+        "taxAmount": {
+          "type": "number"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "currencyId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "isTransferScheduled": {
+          "type": "boolean"
+        },
+        "reasonForRejection": {
+          "type": "string"
+        },
+        "numberOfFailedScheduledTransfer": {
+          "type": "integer",
+          "example": 0
+        },
+        "numberOfSuccessfulScheduledTransfer": {
+          "type": "integer",
+          "example": 0
+        },
+        "totalNumberOfScheduledTransfer": {
+          "type": "integer",
+          "example": 0
+        },
+        "transferType": {
+          "type": "string"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "frequency": {
+          "type": "integer"
+        },
+        "scheduleStartDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "scheduleTransferDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "scheduleEndDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "requestStatus": {
+          "type": "string"
+        },
+        "transactionStatus": {
+          "type": "string",
+          "example": "pending"
+        },
+        "approveStatus": {
+          "type": "string",
+          "example": "pending"
+        },
+        "transactionLedgers": {
+          "type": "array",
+          "item": {
+            "type": "object"
+          }
+        },
+        "applicableChargeLedgers": {
+          "type": "array",
+          "item": {
+            "type": "object"
+          }
+        },
+        "chargeApplicableTaxLedgerEntries": {
+          "type": "array",
+          "item": {
+            "type": "object"
+          }
+        },
+        "applicableTaxLedgers": {
+          "type": "array",
+          "item": {
+            "type": "object"
+          }
+        },
+        "referenceId": {
+          "type": "string"
+        },
+        "transferFileName": {
+          "type": "string"
+        },
+        "transferFile": {
+          "type": "string"
+        },
+        "journalPostingRequestId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "journalPostingReferenceId": {
+          "type": "string"
+        },
+        "debitType": {
+          "type": "string"
+        },
+        "transferData": {
+          "type": "object"
+        },
+        "bulkTransferData": {
+          "type": "object"
+        },
+        "standingOrderPrunedgeData": {
+          "type": "array",
+          "item": {
+            "type": "object"
+          }
+        },
+        "createdStandingOrder": {
+          "type": "boolean",
+          "example": false
+        },
+        "isActiveStandingOrder": {
+          "type": "boolean",
+          "example": false
+        },
+        "transferStatus": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "transfer_transaction": {
+      "required": ["transferId", "referenceId", "transferType"],
+      "type": "object",
+      "properties": {
+        "transferId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "debitAccountNumber": {
+          "type": "string"
+        },
+        "debitAccountName": {
+          "type": "string"
+        },
+        "beneficiaryBank": {
+          "type": "string"
+        },
+        "beneficiaryAccountNumber": {
+          "type": "string"
+        },
+        "beneficiaryAccountName": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "chargeAmount": {
+          "type": "number"
+        },
+        "taxAmount": {
+          "type": "number"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "currencyId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "transferType": {
+          "type": "string"
+        },
+        "transactionStatus": {
+          "type": "string",
+          "example": "pending"
+        },
+        "referenceId": {
+          "type": "string"
+        },
+        "journalPostingRequestId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "journalPostingReferenceId": {
+          "type": "integer",
+          "example": 0
+        },
+
+        "debitType": {
+          "type": "string"
+        },
+        "transferData": {
+          "type": "object"
+        },
+        "bulkTransferData": {
+          "type": "object"
+        },
+        "standingOrderPrunedgeData": {
+          "type": "array",
+          "item": {
+            "type": "object"
+          }
+        },
+        "numberOfFailedSingleTransferInBulkTransfer": {
+          "type": "integer",
+          "example": 0
+        },
+        "numberOfSuccessfulSingleTransferInBulkTransfer": {
+          "type": "integer",
+          "example": 0
+        },
+        "totalNumberOfSingleTransferInBulkTransfer": {
+          "type": "integer",
+          "example": 0
+        },
+        "reasonForFailure": {
+          "type": "string"
+        }
+      }
+    },
+    "ApiResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "Automated Transfer Narration": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "narration": {
+          "type": "string"
+        }
+      },
+      "xml": {
+        "name": "Automated Transfer Narration"
+      }
+    },
+    "Split Entry Journal Posting": {
+      "type": "object",
+      "properties": {
+        "postingRequestId": {
+          "type": "string",
+          "format": "UUID",
+          "primaryKey": true
+        },
+        "referenceId": {
+          "type": "string",
+          "allowNull": true
+        },
+        "debitAccountDetails": {
+          "type": "JSONB",
+          "allowNull": true
+        },
+        "creditAccountDetails": {
+          "type": "JSONB",
+          "allowNull": true
+        },
+        "debitLedgers": {
+          "type": "JSONB",
+          "allowNull": true
+        },
+        "creditLedgers": {
+          "type": "JSONB",
+          "allowNull": true
+        },
+        "postingAmount": {
+          "type": "DECIMAL",
+          "allowNull": true
+        },
+        "currencyCode": {
+          "type": "string",
+          "allowNull": true
+        },
+        "currencyId": {
+          "type": "string",
+          "format": "UUID",
+          "allowNull": true
+        },
+        "postingNarration": {
+          "type": "string",
+          "allowNull": true
+        },
+        "supportingDocumentUrl": {
+          "type": "string",
+          "allowNull": true
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "DATE",
+          "allowNull": true
+        },
+        "valueDate": {
+          "type": "string",
+          "format": "DATE",
+          "allowNull": true
+        },
+        "approveStatus": {
+          "type": "string",
+          "format": "ENUM",
+          "allowNull": true,
+          "defaultValue": "PENDING"
+        },
+        "requestStatus": {
+          "type": "string",
+          "format": "ENUM",
+          "allowNull": true,
+          "defaultValue": "IN_REVIEW"
+        },
+        "reasonForFailure": {
+          "type": "string",
+          "allowNull": true
+        },
+        "metadata": {
+          "type": "JSONB",
+          "allowNull": true
+        },
+        "transactionId": {
+          "type": "string",
+          "allowNull": true
+        }
+      },
+      "xml": {
+        "name": "Split Entry Journal Posting"
+      }
+    },
+    "Branch Journal Posting": {
+      "type": "object",
+      "properties": {
+        "postingRequestId": {
+          "type": "string",
+          "format": "UUID",
+          "primaryKey": true
+        },
+        "referenceId": {
+          "type": "string",
+          "allowNull": true
+        },
+        "debitAccountNo": {
+          "type": "string",
+          "allowNull": true
+        },
+        "debitAccountName": {
+          "type": "string",
+          "allowNull": true
+        },
+        "creditAccountNo": {
+          "type": "string",
+          "allowNull": true
+        },
+        "creditAccountName": {
+          "type": "string",
+          "allowNull": true
+        },
+        "postingAmount": {
+          "type": "DECIMAL",
+          "allowNull": true
+        },
+        "debitCurrencyCode": {
+          "type": "string",
+          "allowNull": true
+        },
+        "debitCurrencyId": {
+          "type": "string",
+          "format": "UUID",
+          "allowNull": true
+        },
+        "isSameCurrency": {
+          "type": "BOOLEAN",
+          "allowNull": true
+        },
+        "creditCurrencyCode": {
+          "type": "string",
+          "allowNull": true
+        },
+        "creditCurrencyId": {
+          "type": "string",
+          "format": "UUID",
+          "allowNull": true
+        },
+        "postingNarration": {
+          "type": "string",
+          "allowNull": true
+        },
+        "postingDate": {
+          "type": "string",
+          "format": "DATE",
+          "allowNull": true
+        },
+        "valueDate": {
+          "type": "string",
+          "format": "DATE",
+          "allowNull": true
+        },
+        "postingStatus": {
+          "type": "string",
+          "format": "ENUM",
+          "allowNull": true,
+          "defaultValue": "PENDING"
+        },
+        "requestStatus": {
+          "type": "string",
+          "format": "ENUM",
+          "allowNull": true,
+          "defaultValue": "IN_REVIEW"
+        },
+        "reasonForRejection": {
+          "type": "string",
+          "allowNull": true
+        },
+        "reasonForFailure": {
+          "type": "string",
+          "allowNull": true
+        },
+        "metadata": {
+          "type": "JSONB",
+          "allowNull": true
+        },
+        "transactionId": {
+          "type": "string",
+          "allowNull": true
+        }
+      },
+      "xml": {
+        "name": "Branch Journal Posting"
+      }
+    },
+    "Bulk Journal Posting Validation": {
+      "type": "object",
+      "properties": {
+        "batchId": {
+          "type": "string",
+          "format": "UUID",
+          "allowNull": false,
+          "primaryKey": true
+        },
+        "userId": {
+          "type": "string",
+          "format": "UUID",
+          "allowNull": true
+        },
+        "referenceId": {
+          "type": "string",
+          "allowNull": true
+        },
+        "postingPayload": {
+          "type": "JSON",
+          "allowNull": true
+        },
+        "status": {
+          "type": "string",
+          "format": "ENUM",
+          "allowNull": false,
+          "defaultValue": "PENDING"
+        },
+        "coverage": {
+          "type": "DECIMAL",
+          "allowNull": true
+        },
+        "validations": {
+          "type": "JSON",
+          "allowNull": true
+        }
+      },
+      "xml": {
+        "name": "Bulk Journal Posting Validation"
+      }
+    }
+  }
+}
