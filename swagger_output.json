@@ -98,7 +98,8 @@
       }
     }
   },
-
+x-hideTryItPanel: true
+x-codeSamples: true
   "paths": {
     "/cheques/withdrawal": {
       "post": {
